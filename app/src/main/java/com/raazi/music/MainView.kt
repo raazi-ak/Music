@@ -45,8 +45,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainView(){
 
-    val scaffoldState: ScaffoldState = rememberScaffoldState()
-    val scope: CoroutineScope = rememberCoroutineScope()
     val controller: NavController = rememberNavController()
     val viewModel:MainViewModel = viewModel()
     val navBackStackEntry by controller.currentBackStackEntryAsState()
@@ -54,14 +52,19 @@ fun MainView(){
     val currentScreen = remember{
         viewModel.currentScreen.value
     }
+    val scaffoldState: ScaffoldState = rememberScaffoldState()
+    val scope: CoroutineScope = rememberCoroutineScope()
+
     val title = remember{
         mutableStateOf(currentScreen.title)
     }
-
+    val dialogOpen = remember {
+        mutableStateOf(false)
+    }
     androidx.compose.material.Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Home") },
+                title = { Text(text = title.value) },
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch {
@@ -80,12 +83,13 @@ fun MainView(){
             LazyColumn(modifier = Modifier.padding(16.dp)) {
                 items(screensInDrawer){ item ->
                           DrawerItem(selected = currentRoute == item.dRoute, item = item ) {
+                              viewModel.setCurrentScreen(currentScreen)
                             scope.launch {
                                 scaffoldState.drawerState.close()
 
                             }
                               if(item.dRoute== "add_account"){
-                                  //open dialog
+                                  dialogOpen.value = true
                               }else{
                                   controller.navigate(item.dRoute)
                                   title.value = item.dTitle
@@ -96,7 +100,8 @@ fun MainView(){
         }
 
     ) {
-            Navigation(navController = controller as NavHostController, viewModel = viewModel, pd = it)
+            Navigation(navController = controller, viewModel = viewModel, pd = it)
+        AccountDialog(dialogOpen = dialogOpen)
     }
 }
 
@@ -108,7 +113,8 @@ fun DrawerItem(
     onDrawerItemClicked: () -> Unit,
 
 ){
-    val background = if(selected) Color.DarkGray else Color.White
+         val background = if(selected) Color.DarkGray else Color.White
+
         Row(
             modifier= Modifier
                 .fillMaxWidth()
@@ -126,15 +132,16 @@ fun DrawerItem(
 }
 
 @Composable
-fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd:PaddingValues){
-    NavHost(navController = navController , startDestination = Screen.DrawerScreen.AddAccount.route, modifier = Modifier.padding(pd)) {
+fun Navigation(navController: NavController, viewModel: MainViewModel, pd:PaddingValues){
+    NavHost(navController = navController as NavHostController , startDestination = Screen.DrawerScreen.Account.route, modifier = Modifier.padding(pd)) {
        
         composable(Screen.DrawerScreen.Subscription.route){
-            
+            SubscriptionView()
         }
         composable(Screen.DrawerScreen.Account.route){
-            
+            AccountView()
         }
+
 
         
     }
