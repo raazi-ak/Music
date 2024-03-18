@@ -3,10 +3,12 @@ package com.raazi.music
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -20,11 +22,21 @@ import androidx.compose.material3.Text
 
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -35,7 +47,16 @@ fun MainView(){
 
     val scaffoldState: ScaffoldState = rememberScaffoldState()
     val scope: CoroutineScope = rememberCoroutineScope()
-
+    val controller: NavController = rememberNavController()
+    val viewModel:MainViewModel = viewModel()
+    val navBackStackEntry by controller.currentBackStackEntryAsState()
+    val currentRoute= navBackStackEntry?.destination?.route
+    val currentScreen = remember{
+        viewModel.currentScreen.value
+    }
+    val title = remember{
+        mutableStateOf(currentScreen.title)
+    }
 
     androidx.compose.material.Scaffold(
         topBar = {
@@ -58,15 +79,24 @@ fun MainView(){
         drawerContent = {
             LazyColumn(modifier = Modifier.padding(16.dp)) {
                 items(screensInDrawer){ item ->
-                          DrawerItem(selected = , item = item ) {
+                          DrawerItem(selected = currentRoute == item.dRoute, item = item ) {
+                            scope.launch {
+                                scaffoldState.drawerState.close()
 
+                            }
+                              if(item.dRoute== "add_account"){
+                                  //open dialog
+                              }else{
+                                  controller.navigate(item.dRoute)
+                                  title.value = item.dTitle
+                              }
                           }
                 }
             }
         }
 
     ) {
-            Text(text = "Text", modifier = Modifier.padding(it))
+            Navigation(navController = controller as NavHostController, viewModel = viewModel, pd = it)
     }
 }
 
@@ -93,4 +123,21 @@ fun DrawerItem(
             Text(text = item.dTitle,
                 style = MaterialTheme.typography.headlineMedium)
         }
+}
+
+@Composable
+fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd:PaddingValues){
+    NavHost(navController = navController , startDestination = Screen.DrawerScreen.AddAccount.route, modifier = Modifier.padding(pd)) {
+       
+        composable(Screen.DrawerScreen.Subscription.route){
+            
+        }
+        composable(Screen.DrawerScreen.Account.route){
+            
+        }
+
+        
+    }
+        
+    
 }
